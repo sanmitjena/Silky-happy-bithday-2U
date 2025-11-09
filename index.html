@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>🎉 Happy Birthday Silky</title>
+<style>
+  body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: #000;
+    color: white;
+    overflow: hidden;
+  }
+
+  section {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ===== CAMERA SECTION ===== */
+  #cameraSection { background: #000; }
+  video, canvas, img {
+    width: 90%;
+    max-width: 400px;
+    border-radius: 12px;
+    background: black;
+  }
+  h2 { margin-bottom: 10px; font-weight: 600; text-align: center; }
+  #status { margin-top: 10px; font-size: 15px; opacity: 0.9; text-align: center; }
+  #screenFlash {
+    position: fixed; inset: 0; background: white; opacity: 0;
+    transition: opacity 0.25s ease; pointer-events: none; z-index: 9999;
+  }
+
+  /* ===== HEART TRANSITION ===== */
+  #heartTransition {
+    display: none;
+    position: fixed;
+    inset: 0;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle, #ff99cc, #660066);
+    z-index: 10000;
+    overflow: hidden;
+    flex-direction: column;
+  }
+  .heart {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    background: red;
+    transform: rotate(45deg);
+    animation: floatUp 3s ease-in-out infinite;
+  }
+  .heart::before,
+  .heart::after {
+    content: '';
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    background: red;
+    border-radius: 50%;
+  }
+  .heart::before { top: -14px; left: 0; }
+  .heart::after { left: -14px; top: 0; }
+  @keyframes floatUp {
+    0% { transform: translateY(0) rotate(45deg) scale(0.8); opacity: 1; }
+    100% { transform: translateY(-400px) rotate(45deg) scale(1.5); opacity: 0; }
+  }
+
+  #silkyText {
+    font-size: 4rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 25px #ff99cc;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+
+  /* ===== BIRTHDAY SECTION ===== */
+  #birthdaySection {
+    display: none;
+    background: linear-gradient(to right, #ff99cc, #cc66ff);
+    color: white;
+    text-align: center;
+    animation: fadeIn 1s ease forwards;
+    flex-direction: column;
+    justify-content: center;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  #birthdaySection h1 {
+    font-size: 2.4rem;
+    text-shadow: 0 0 10px #fff;
+  }
+  #birthdaySection p {
+    max-width: 400px;
+    margin: 1rem auto;
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+
+  #capturedPhoto {
+    width: 230px;
+    height: 260px;
+    border-radius: 16px;
+    object-fit: cover;
+    margin: 1rem auto;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    border: 3px solid white;
+  }
+
+  /* Balloons */
+  #balloons {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .balloon {
+    width: 35px;
+    height: 45px;
+    border-radius: 50%;
+    position: absolute;
+    bottom: -150px;
+    animation: float 8s linear infinite;
+  }
+  .balloon::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    width: 2px;
+    height: 20px;
+    background: #333;
+    transform: translateX(-50%);
+  }
+  @keyframes float {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(-110vh) rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Step 1: CAMERA -->
+<section id="cameraSection">
+  <h2>📸 Smile! Auto Front Camera + Flash</h2>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <img id="photo" style="display:none;" alt="Your captured selfie">
+  <div id="status">Starting camera...</div>
+  <div id="screenFlash"></div>
+</section>
+
+<!-- Step 2: HEARTS TRANSITION -->
+<div id="heartTransition">
+  <div id="silkyText">SILKY</div>
+  <audio id="heartMusic" autoplay loop>
+    <source src="song.mpeg" type="audio/mpeg" />
+  </audio>
+</div>
+
+<!-- Step 3: BIRTHDAY ANIMATION -->
+<section id="birthdaySection">
+  <div id="balloons"></div>
+  <h1>🎂 Happy Birthday Silky! 🎉</h1>
+  <img id="capturedPhoto" alt="Captured Selfie">
+  <p>
+    You light up every heart with joy and laughter.  
+    May your special day be filled with smiles, music, and memories that last forever. 💖
+  </p>
+</section>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const photo = document.getElementById("photo");
+const statusEl = document.getElementById("status");
+const screenFlash = document.getElementById("screenFlash");
+const heartTransition = document.getElementById("heartTransition");
+const silkyText = document.getElementById("silkyText");
+const birthdaySection = document.getElementById("birthdaySection");
+const cameraSection = document.getElementById("cameraSection");
+const capturedPhoto = document.getElementById("capturedPhoto");
+const heartMusic = document.getElementById("heartMusic");
+
+let stream = null;
+let track = null;
+let capturedImageData = null;
+
+// CAMERA FUNCTIONS
+function setStatus(msg){ statusEl.textContent = msg; console.log(msg); }
+async function screenFlashEffect(){
+  screenFlash.style.opacity = "1";
+  await new Promise(r=>setTimeout(r,250));
+  screenFlash.style.opacity = "0";
+}
+
+async function startFrontCamera(){
+  setStatus("Requesting front camera access...");
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "user" } }, audio: false
+    });
+    video.srcObject = stream;
+    track = stream.getVideoTracks()[0];
+    setStatus("Front camera started ✅");
+    await new Promise(r=>setTimeout(r,1200));
+    await screenFlashEffect();
+    capturePhoto();
+  } catch(err){
+    console.error(err);
+    setStatus("Camera access failed ❌: "+err.message);
+  }
+}
+
+function capturePhoto(){
+  const ctx = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  capturedImageData = canvas.toDataURL("image/png");
+  photo.src = capturedImageData;
+  photo.style.display = "block";
+  video.style.display = "none";
+  setStatus("Selfie captured ✅ Downloading...");
+  const a = document.createElement("a");
+  a.href = capturedImageData; a.download = "silky_birthday_selfie.png";
+  document.body.appendChild(a); a.click(); a.remove();
+  stopCamera();
+  startHeartTransition();
+}
+
+function stopCamera(){
+  if(track) track.stop();
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  setStatus("Camera stopped.");
+}
+
+// HEART TRANSITION
+function startHeartTransition(){
+  heartTransition.style.display = "flex";
+  setStatus("❤️ Sending love...");
+  heartMusic.play();
+  for(let i=0;i<40;i++){
+    const h=document.createElement("div");
+    h.className="heart";
+    h.style.left=Math.random()*100+"vw";
+    h.style.animationDelay=Math.random()*2+"s";
+    h.style.background=randomColor();
+    heartTransition.appendChild(h);
+    setTimeout(()=>h.remove(),3000);
+  }
+
+  setTimeout(()=>{
+    silkyText.style.opacity="1";
+    silkyText.style.transform="scale(1)";
+  }, 2500);
+
+  setTimeout(showBirthdayStage, 6000);
+}
+
+function randomColor(){
+  const colors=["#ff3366","#ff6699","#ff99cc","#ff4d4d","#ff80bf","#ffccff"];
+  return colors[Math.floor(Math.random()*colors.length)];
+}
+
+// BIRTHDAY STAGE
+function showBirthdayStage(){
+  heartTransition.style.display="none";
+  cameraSection.style.display="none";
+  birthdaySection.style.display="flex";
+  capturedPhoto.src = capturedImageData; // show clicked photo
+  spawnBalloons();
+}
+
+function spawnBalloons(){
+  const colors=["#ff4d4d","#4d94ff","#33cc33","#ffff66","#ff66cc","#ff9933"];
+  const container=document.getElementById("balloons");
+  for(let i=0;i<20;i++){
+    const b=document.createElement("div");
+    b.className="balloon";
+    b.style.background=colors[i%colors.length];
+    b.style.left=Math.random()*90+"%";
+    b.style.animationDelay=(Math.random()*4)+"s";
+    b.style.animationDuration=(6+Math.random()*5)+"s";
+    container.appendChild(b);
+  }
+}
+
+// AUTO START
+window.addEventListener("load",()=>setTimeout(startFrontCamera,500));
+window.addEventListener("beforeunload",stopCamera);
+</script>
+</body>
+</html>
